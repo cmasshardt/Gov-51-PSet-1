@@ -6,3 +6,23 @@ editor: visual
 ---
 
 ## Gov 51 PSet 1
+
+Caleb Masshardt
+
+February 11, 2026
+
+GitHub Repository URL: <https://github.com/cmasshardt/Gov-51-PSet-1.git>
+
+## 1. Project Setup (10 points)
+
+Instructions from problem set followed. See GitHub repository URL above.
+
+## 2. Get to Know Your Data (15 points)
+
+1.  Load the tidyverse and read in your ACS data.
+
+```{r}
+library(tidyverse)
+
+acs <- read.csv("./data/raw/acs2024.csv")
+```
