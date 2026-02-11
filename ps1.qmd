@@ -19,10 +19,136 @@ Instructions from problem set followed. See GitHub repository URL above.
 
 ## 2. Get to Know Your Data (15 points)
 
-1.  Load the tidyverse and read in your ACS data.
+*1. Load the tidyverse and read in your ACS data.*
 
 ```{r}
 library(tidyverse)
 
 acs <- read.csv("./data/raw/acs2024.csv")
+```
+
+*2. Look up what each variable in your dataset means.*
+
+TRANTIME: Commute time (minutes) of individual. A value of "0" indicates that the person has no commute time (either unemployed, not in the labor market, or works from home).
+
+PERWT: How many persons in the population are represented by A given person in the IMUPS sample.
+
+*3. Create new variables from the raw IMUPS code.*
+
+```{r}
+#Check range of SEX to see if there are NA values (labeled as 9)
+range(acs$SEX)
+```
+
+```{r}
+#Female variable: equals 1 if female, 0 otherwise female
+acs <- acs %>%
+  mutate(female = SEX-1)
+
+```
+
+```{r}
+# Check range of EDUC to see if there are NA values (labeled as 99)
+range(acs$EDUC)
+```
+
+```{r}
+#Education dummy variables
+#less_than_hs
+acs <- acs %>%
+  mutate(less_than_hs = as.numeric(EDUC==c(1,2)))
+#hs_only
+acs <- acs %>%
+  mutate(hs_only = as.numeric(EDUC==c(3,4,5,6)))
+#some_college
+acs <- acs %>%
+  mutate(some_college = as.numeric(EDUC==c(7,8,9)))
+#college_only
+acs <- acs %>%
+  mutate(college_only = as.numeric(EDUC==10))
+#advanced_degree
+acs <- acs %>%
+  mutate(advanced_degree = as.numeric(EDUC==11))
+```
+
+```{r}
+#Check range of EMPSTAT to see if there are NA values (labeled as 9)
+range(acs$EMPSTAT)
+```
+
+```{r}
+#Employment dummy variables
+#employed
+acs <- acs %>%
+  mutate(employed = as.numeric(EMPSTAT==1))
+#unemployed
+acs <- acs %>%
+  mutate(unemployed = as.numeric(EMPSTAT==2))
+#not_in_labor_force
+acs <- acs %>%
+  mutate(not_in_labor_force = as.numeric(EMPSTAT==3))
+```
+
+Remove N/A values (expressed as 999999) from INCTOT
+```{r}
+
+```
+
+
+*4. Why does this matter? In 2–3 sentences, explain what could go wrong if you accidentally treated “N/A” codes as real zeros when calculating summary statistics. Give a concrete example using one of the variables in your dataset.*
+
+Since the N/A values for the variables in this dataset are represented by numerals accidentally treating these representations of N/A values as real zeros would lead to very different values for the mean, standard deviation, and maximum, which are vulnerable to strong influence from outliers. For example, for the variable AGE, N/A values are written as 999. If one of the observations in the dataset for age were N/A (999), the summary statistics for age would be strongly and inaccurately influenced by the enormous value of 999. As such, the mean, standard deviation, and maximum would all be incorrect.
+
+*5. Create a summary statistics table for your dataset.*
+
+```{r}
+#Creating summary statistics table
+summary_stats <- data.frame(
+  Variable = c("Age", "Female", "Less than High School", "High School Only", "Some College", "College Only", "Advanced Degree", "Employed", "Unemployed", "Not in Labor Force", "Commute Time (mins)", "Total Income ($)"),
+  N = c(length(acs$AGE),
+        length(acs$female), length(acs$less_than_hs), length(acs$hs_only),
+        length(acs$some_college), length(acs$college_only),
+        length(acs$advanced_degree), length(acs$employed),
+        length(acs$unemployed), length(acs$not_in_labor_force),
+        length(acs$TRANTIME), length(acs$INCTOT)),
+  Mean = c(mean(acs$AGE),
+        mean(acs$female), mean(acs$less_than_hs), mean(acs$hs_only),
+        mean(acs$some_college), mean(acs$college_only),
+        mean(acs$advanced_degree), mean(acs$employed),
+        mean(acs$unemployed), mean(acs$not_in_labor_force),
+        mean(acs$TRANTIME), mean(acs$INCTOT)),
+  SD = c(sd(acs$AGE),
+        sd(acs$female), sd(acs$less_than_hs), sd(acs$hs_only),
+        sd(acs$some_college), sd(acs$college_only),
+        sd(acs$advanced_degree), sd(acs$employed),
+        sd(acs$unemployed), sd(acs$not_in_labor_force),
+        sd(acs$TRANTIME), sd(acs$INCTOT)),
+  Min = c(min(acs$AGE),
+        min(acs$female), min(acs$less_than_hs), min(acs$hs_only),
+        min(acs$some_college), min(acs$college_only),
+        min(acs$advanced_degree), min(acs$employed),
+        min(acs$unemployed), min(acs$not_in_labor_force),
+        min(acs$TRANTIME), min(acs$INCTOT)),
+  Max = c(max(acs$AGE),
+        max(acs$female), max(acs$less_than_hs), max(acs$hs_only),
+        max(acs$some_college), max(acs$college_only),
+        max(acs$advanced_degree), max(acs$employed),
+        max(acs$unemployed), max(acs$not_in_labor_force),
+        max(acs$TRANTIME), max(acs$INCTOT))
+)
+
+#Round the stats
+stats_rounded <- summary_stats
+stats_rounded[, -1] <- round(summary_stats[, -1], 2)
+stats_rounded
+
+#For table presentation
+library(knitr)
+
+stats_rounded |>
+  kable(
+    col.names = c("Variable", "N", "Mean", "Std Dev", "Min", "Max") ,
+    digits = 2 ,
+    caption = "Summary Statistics for 2024 ACS Sample"
+  )
 ```
