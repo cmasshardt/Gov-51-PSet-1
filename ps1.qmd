@@ -13,11 +13,11 @@ February 11, 2026
 
 GitHub Repository URL: <https://github.com/cmasshardt/Gov-51-PSet-1.git>
 
-## 1. Project Setup (10 points)
+## 1. Project Setup
 
 Instructions from problem set followed. See GitHub repository URL above.
 
-## 2. Get to Know Your Data (15 points)
+## 2. Get to Know Your Data
 
 *1. Load the tidyverse and read in your ACS data.*
 
@@ -54,8 +54,6 @@ Creating dummy variables for education level.
 # Check range of EDUC to see if there are NA/missing values (labeled as 00 or 99)
 range(acs$EDUC)
 ```
-
-
 
 ```{r}
 #Education dummy variables
@@ -171,7 +169,7 @@ stats_rounded |>
 
 The maximum commute time (from home to work) of 195 minutes, which is over 3 hours, seems incredibly long, it is in the realm of possibility. One could imagine an outlier respondent who takes a slower form of transit such as the train over a long distance to make a living.
 
-## 3. Who Should be in Your Analysis? (25 points)
+## 3. Who Should be in Your Analysis?
 
 *1. Investigate the data.*
 
@@ -272,7 +270,9 @@ commuter_stats_rounded |>
 
 ## 4. Visualize and Interpret (20 points)
 
-*1. Create a histogram of commute times using ggplot2. Include an informative title, clear axis labels, and a reasonable bin width.* 
+## 4. Visualize and Interpret
+
+*1. Create a histogram of commute times using ggplot2. Include an informative title, clear axis labels, and a reasonable bin width.*
 
 ```{r}
 #Create histogram of commute times
@@ -290,14 +290,13 @@ commute_histogram
 median(commuters$TRANTIME)
 ```
 
-
 *2. In 2–3 sentences, describe what you see: Is it symmetric or skewed? Where is the center? Are there any notable features (e.g., spikes at certain values)?*
 
-The distribution of commute times from the ACS 2024 data is clearly skewed right, with a center of approximately 20 (see median calculation for confirmation). We can see a small spike at around 60 minutes, meaning that for a substantial group of people, the commute is around 1 hour each way to and from work. There is also an interesting cluster of commute times around 150 minutes, highlighting a small outlier group of individuals with very long commute times. 
+The distribution of commute times from the ACS 2024 data is clearly skewed right, with a center of approximately 20 (see median calculation for confirmation). We can see a small spike at around 60 minutes, meaning that for a substantial group of people, the commute is around 1 hour each way to and from work. There is also an interesting cluster of commute times around 150 minutes, highlighting a small outlier group of individuals with very long commute times.
 
 *3. Using your summary statistics table from Section 3, compare the mean and median commute time. Which is larger? What does this tell you about the shape of the distribution, and does it match what you see in the histogram?*
 
-Given that the mean commute time of 27.22 minutes (from section 3) is greater than the median of 20 minutes for the commuters dataset, the data is skewed right, with the mean perhaps influenced by large positive outliers as well. When the mean is greater than the median, we can infer that there are a few high values pulling up the mean, since the mean is resistant to skew and outliers while the median is not. This conclusion matches what we see in the graph: The data is clearly skewed right and contains high outliers, particularly the maximum value of 195 minutes.  
+Given that the mean commute time of 27.22 minutes (from section 3) is greater than the median of 20 minutes for the commuters dataset, the data is skewed right, with the mean perhaps influenced by large positive outliers as well. When the mean is greater than the median, we can infer that there are a few high values pulling up the mean, since the mean is resistant to skew and outliers while the median is not. This conclusion matches what we see in the graph: The data is clearly skewed right and contains high outliers, particularly the maximum value of 195 minutes.
 
 *4. Save your histogram to output/commute histogram.png using ggsave().*
 
@@ -305,7 +304,19 @@ Given that the mean commute time of 27.22 minutes (from section 3) is greater th
 ggsave("./output/commute_histogram.png", commute_histogram, width = 8, height = 5)
 ```
 
+## 5. The Weight of Evidence
 
+*1. Calculate the weighted mean (commute time).*
 
+```{r}
+#Weighted mean using PERWT variable
+weighted.mean(commuters$TRANTIME, commuters$PERWT)
+```
 
+*2. Compare: Is the weighted mean different from the unweighted mean you calculated earlier? By how much?*
 
+Yes: The weighted mean commute time of 27.19 minutes is slightly lower than the unweighted mean of 27.22 minutes, as calculated earlier. This is a rather insignificant difference of 0.03 minutes.
+
+*3. In 2-3 sentences, explain what each number represents and why they might differ.*
+
+The unweighted mean of 27.22 minutes represents the mean commute time for an individual in the ACS sample who is a commuter; meanwhile, the *weighted* mean of 27.19 minutes represents the mean commute time for an individual in the general population who commutes to work. The weighted mean takes into account how many people in the overall American population are represented by each particular survey respondent with regard to other characteristics such as age and income, such that the weighted mean better represents the commute time for the "average" American. As such, the weighted mean commute time might be slightly lower than the unweighted mean because it could, for example, better represent younger people who walk/bike to work, or who work closer to home so that they can be in close proximity to their children. 
