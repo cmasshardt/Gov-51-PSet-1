@@ -55,16 +55,13 @@ Creating dummy variables for education level.
 range(acs$EDUC)
 ```
 
-```{r}
-#Filter out the NA values (labeled as 0) from EDUC column. 
 
-```
 
 ```{r}
 #Education dummy variables
 #less_than_hs
 acs <- acs %>%
-  mutate(less_than_hs = if_else(EDUC %in% c(1,2), 1, 0))
+  mutate(less_than_hs = if_else(EDUC %in% c(0,1,2), 1, 0))
 #hs_only
 acs <- acs %>%
   mutate(hs_only = if_else(EDUC %in% c(3,4,5,6), 1, 0))
@@ -88,7 +85,8 @@ range(acs$EMPSTAT)
 
 ```{r}
 #Filter out the NA values (labeled as 0) from EMPSTAT column. 
-
+acs <- acs %>%
+  mutate(EMPSTAT = if_else(EMPSTAT %in% 0, NA, EMPSTAT))
 ```
 
 ```{r}
@@ -107,7 +105,8 @@ acs <- acs %>%
 Remove N/A values (expressed as 999999) from INCTOT
 
 ```{r}
-
+acs <- acs %>%
+  mutate(INCTOT = if_else(INCTOT %in% 9999999, NA, INCTOT))
 ```
 
 *4. Why does this matter? In 2–3 sentences, explain what could go wrong if you accidentally treated “N/A” codes as real zeros when calculating summary statistics. Give a concrete example using one of the variables in your dataset.*
@@ -131,25 +130,25 @@ summary_stats <- data.frame(
         mean(acs$some_college), mean(acs$college_only),
         mean(acs$advanced_degree), mean(acs$employed),
         mean(acs$unemployed), mean(acs$not_in_labor_force),
-        mean(acs$TRANTIME), mean(acs$INCTOT)),
+        mean(acs$TRANTIME), mean(acs$INCTOT, na.rm = TRUE)),
   SD = c(sd(acs$AGE),
         sd(acs$female), sd(acs$less_than_hs), sd(acs$hs_only),
         sd(acs$some_college), sd(acs$college_only),
         sd(acs$advanced_degree), sd(acs$employed),
         sd(acs$unemployed), sd(acs$not_in_labor_force),
-        sd(acs$TRANTIME), sd(acs$INCTOT)),
+        sd(acs$TRANTIME), sd(acs$INCTOT, na.rm = TRUE)),
   Min = c(min(acs$AGE),
         min(acs$female), min(acs$less_than_hs), min(acs$hs_only),
         min(acs$some_college), min(acs$college_only),
         min(acs$advanced_degree), min(acs$employed),
         min(acs$unemployed), min(acs$not_in_labor_force),
-        min(acs$TRANTIME), min(acs$INCTOT)),
+        min(acs$TRANTIME), min(acs$INCTOT, na.rm = TRUE)),
   Max = c(max(acs$AGE),
         max(acs$female), max(acs$less_than_hs), max(acs$hs_only),
         max(acs$some_college), max(acs$college_only),
         max(acs$advanced_degree), max(acs$employed),
         max(acs$unemployed), max(acs$not_in_labor_force),
-        max(acs$TRANTIME), max(acs$INCTOT))
+        max(acs$TRANTIME), max(acs$INCTOT, na.rm = TRUE))
 )
 
 #Round the stats
@@ -174,7 +173,7 @@ The maximum commute time (from home to work) of 195 minutes, which is over 3 hou
 
 ## 3. Who Should be in Your Analysis? (25 points)
 
-\*1. Investigate the data.
+*1. Investigate the data.*
 
 ```{r}
 #Create variable no_commute with value of 1 if the person has no commute (commute time of 0 minutes) and 0 otherwise (commute time greater than 0 minutes).
@@ -202,7 +201,7 @@ commuters <- acs[acs$no_commute==0,]
 
 Since we "want to study commute times for people who actually commute to work," the subset commuters should include individuals whose commute time is greater than zero minutes. Removing individuals with a commute time of 0 minutes from the data set when creating the *commuters* subset has the effect of also removing those who are children, retirees, unemployed, or otherwise not in the labor market, since anyone who does not have employment will not have a commute time to work. Since the *no_commute* variable I created has a value of 0 for individuals with a commute time of greater than zero minutes, I have subsetted the data such that *commuters* only contains the individuals with a value of "0" for the variable *no_commute.*
 
-*Verify your subset.*
+*3. Verify your subset.*
 
 ```{r}
 #Number of rows indicates how many observations remain in the commuters subset.
@@ -215,7 +214,7 @@ nrow(commuters)
 min(commuters$TRANTIME)
 ```
 
-The new minimum TRANTIME is 1 (minute). This makes sense, given that the commuters subset has removed all rows representing individuals with a commute time of 0 minutes. 
+The new minimum TRANTIME is 1 (minute). This makes sense, given that the commuters subset has removed all rows representing individuals with a commute time of 0 minutes.
 
 *4. Create a new summary statistics table for your commuters subset, using the same format as your table in Section 2.*
 
@@ -270,5 +269,43 @@ commuter_stats_rounded |>
     caption = "Commuter Summary Statistics for 2024 ACS Sample"
   )
 ```
+
+## 4. Visualize and Interpret (20 points)
+
+*1. Create a histogram of commute times using ggplot2. Include an informative title, clear axis labels, and a reasonable bin width.* 
+
+```{r}
+#Create histogram of commute times
+commute_histogram <- ggplot(commuters, aes(x = TRANTIME)) +
+  geom_histogram(binwidth = 5, fill = "steelblue") +
+  labs(title = "ACS 2024 Commute Time Distribution") +
+  labs(x = "Commute Time (mins)", y = "Frequency") +
+  theme_minimal()
+
+commute_histogram
+```
+
+```{r}
+#Calculating the median
+median(commuters$TRANTIME)
+```
+
+
+*2. In 2–3 sentences, describe what you see: Is it symmetric or skewed? Where is the center? Are there any notable features (e.g., spikes at certain values)?*
+
+The distribution of commute times from the ACS 2024 data is clearly skewed right, with a center of approximately 20 (see median calculation for confirmation). We can see a small spike at around 60 minutes, meaning that for a substantial group of people, the commute is around 1 hour each way to and from work. There is also an interesting cluster of commute times around 150 minutes, highlighting a small outlier group of individuals with very long commute times. 
+
+*3. Using your summary statistics table from Section 3, compare the mean and median commute time. Which is larger? What does this tell you about the shape of the distribution, and does it match what you see in the histogram?*
+
+Given that the mean commute time of 27.22 minutes (from section 3) is greater than the median of 20 minutes for the commuters dataset, the data is skewed right, with the mean perhaps influenced by large positive outliers as well. When the mean is greater than the median, we can infer that there are a few high values pulling up the mean, since the mean is resistant to skew and outliers while the median is not. This conclusion matches what we see in the graph: The data is clearly skewed right and contains high outliers, particularly the maximum value of 195 minutes.  
+
+*4. Save your histogram to output/commute histogram.png using ggsave().*
+
+```{r}
+ggsave("./output/commute_histogram.png", commute_histogram, width = 8, height = 5)
+```
+
+
+
 
 
