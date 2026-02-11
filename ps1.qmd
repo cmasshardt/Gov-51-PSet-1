@@ -29,11 +29,13 @@ acs <- read.csv("./data/raw/acs2024.csv")
 
 *2. Look up what each variable in your dataset means.*
 
-TRANTIME: Commute time (minutes) of individual. A value of "0" indicates that the person has no commute time (either unemployed, not in the labor market, or works from home).
+TRANTIME: Commute time (minutes) of an individual to get from home to work on a typical day last week. A value of "0" indicates that the person has no commute time (either unemployed, not in the labor market, or works from home).
 
 PERWT: How many persons in the population are represented by A given person in the IMUPS sample.
 
 *3. Create new variables from the raw IMUPS code.*
+
+Creating "female" variable.
 
 ```{r}
 #Check range of SEX to see if there are NA values (labeled as 9)
@@ -44,60 +46,73 @@ range(acs$SEX)
 #Female variable: equals 1 if female, 0 otherwise female
 acs <- acs %>%
   mutate(female = SEX-1)
+```
 
+Creating dummy variables for education level.
+
+```{r}
+# Check range of EDUC to see if there are NA/missing values (labeled as 00 or 99)
+range(acs$EDUC)
 ```
 
 ```{r}
-# Check range of EDUC to see if there are NA values (labeled as 99)
-range(acs$EDUC)
+#Filter out the NA values (labeled as 0) from EDUC column. 
+
 ```
 
 ```{r}
 #Education dummy variables
 #less_than_hs
 acs <- acs %>%
-  mutate(less_than_hs = as.numeric(EDUC==c(1,2)))
+  mutate(less_than_hs = if_else(EDUC %in% c(1,2), 1, 0))
 #hs_only
 acs <- acs %>%
-  mutate(hs_only = as.numeric(EDUC==c(3,4,5,6)))
+  mutate(hs_only = if_else(EDUC %in% c(3,4,5,6), 1, 0))
 #some_college
 acs <- acs %>%
-  mutate(some_college = as.numeric(EDUC==c(7,8,9)))
+  mutate(some_college = if_else(EDUC %in% c(7,8,9), 1, 0))
 #college_only
 acs <- acs %>%
-  mutate(college_only = as.numeric(EDUC==10))
+  mutate(college_only = if_else(EDUC %in% 10, 1, 0))
 #advanced_degree
 acs <- acs %>%
-  mutate(advanced_degree = as.numeric(EDUC==11))
+  mutate(advanced_degree = if_else(EDUC %in% 11, 1, 0))
+```
+
+Creating dummy variables for employment.
+
+```{r}
+#Check range of EMPSTAT to see if there are NA/unknown values (labeled as 0 or 9)
+range(acs$EMPSTAT)
 ```
 
 ```{r}
-#Check range of EMPSTAT to see if there are NA values (labeled as 9)
-range(acs$EMPSTAT)
+#Filter out the NA values (labeled as 0) from EMPSTAT column. 
+
 ```
 
 ```{r}
 #Employment dummy variables
 #employed
 acs <- acs %>%
-  mutate(employed = as.numeric(EMPSTAT==1))
+  mutate(employed = if_else(EMPSTAT %in% 1, 1, 0))
 #unemployed
 acs <- acs %>%
-  mutate(unemployed = as.numeric(EMPSTAT==2))
+  mutate(unemployed = if_else(EMPSTAT %in% 2, 1, 0))
 #not_in_labor_force
 acs <- acs %>%
-  mutate(not_in_labor_force = as.numeric(EMPSTAT==3))
+  mutate(not_in_labor_force = if_else(EMPSTAT %in% 3, 1, 0))
 ```
 
 Remove N/A values (expressed as 999999) from INCTOT
+
 ```{r}
 
 ```
 
-
 *4. Why does this matter? In 2–3 sentences, explain what could go wrong if you accidentally treated “N/A” codes as real zeros when calculating summary statistics. Give a concrete example using one of the variables in your dataset.*
 
-Since the N/A values for the variables in this dataset are represented by numerals accidentally treating these representations of N/A values as real zeros would lead to very different values for the mean, standard deviation, and maximum, which are vulnerable to strong influence from outliers. For example, for the variable AGE, N/A values are written as 999. If one of the observations in the dataset for age were N/A (999), the summary statistics for age would be strongly and inaccurately influenced by the enormous value of 999. As such, the mean, standard deviation, and maximum would all be incorrect.
+Since the N/A values for the variables in this dataset are represented by numerals accidentally treating these representations of N/A values as real zeros would lead to very different values for the mean, standard deviation, and maximum, which are vulnerable to strong influence from outliers. For example, for the variable INCTOT (total income in \$), N/A values are written as 999999. If we would have failed to remove the observation of NA (999999) for this variable when calculating statistics, the summary statistics for total income would be strongly and inaccurately influenced by the enormous value of 999,999. As such, the mean, standard deviation, and maximum would all be incorrect.
 
 *5. Create a summary statistics table for your dataset.*
 
@@ -152,3 +167,108 @@ stats_rounded |>
     caption = "Summary Statistics for 2024 ACS Sample"
   )
 ```
+
+*6. Does the maximum commute time make sense for a daily commute?*
+
+The maximum commute time (from home to work) of 195 minutes, which is over 3 hours, seems incredibly long, it is in the realm of possibility. One could imagine an outlier respondent who takes a slower form of transit such as the train over a long distance to make a living.
+
+## 3. Who Should be in Your Analysis? (25 points)
+
+\*1. Investigate the data.
+
+```{r}
+#Create variable no_commute with value of 1 if the person has no commute (commute time of 0 minutes) and 0 otherwise (commute time greater than 0 minutes).
+acs <- acs %>%
+  mutate(no_commute = if_else(TRANTIME %in% 0, 1, 0))
+
+#Using no_commute variable to find out how many people have a commute time of 0 minutes.
+acs |> count(no_commute)
+
+#Since 1 represents no commute and 0 represents a positive commute time, the mean of no_commute gives the proportion of people with a commute time of 0 minutes (represented by a value of 1).
+mean(acs$no_commute)
+```
+
+2,062,945 people have TRANTIME == 0, meaning that 2,062,945 people have an commute time from home to work of 0 minutes. This is equal to 60.27% of survey respondents.
+
+The people with zero commute time fall into the categories of children, retired adults, unemployed people, other individuals not in the labor market, and employees who work from home or live in an attached residence to their workplace.
+
+*2. Make your decision. Create a subset called commuters that includes only people who should be in your commute time analysis.*
+
+```{r}
+commuters <- acs[acs$no_commute==0,] 
+```
+
+*Write 2-3 sentences explaining your criteria and why.*
+
+Since we "want to study commute times for people who actually commute to work," the subset commuters should include individuals whose commute time is greater than zero minutes. Removing individuals with a commute time of 0 minutes from the data set when creating the *commuters* subset has the effect of also removing those who are children, retirees, unemployed, or otherwise not in the labor market, since anyone who does not have employment will not have a commute time to work. Since the *no_commute* variable I created has a value of 0 for individuals with a commute time of greater than zero minutes, I have subsetted the data such that *commuters* only contains the individuals with a value of "0" for the variable *no_commute.*
+
+*Verify your subset.*
+
+```{r}
+#Number of rows indicates how many observations remain in the commuters subset.
+nrow(commuters)
+```
+
+1,359,943 observations remain, meaning that 1,359,943 individuals in the sample actually commute to work. This is the same as the number of individuals who had no commute time, expressed as a value of "0" for the variable *no_commute*.
+
+```{r}
+min(commuters$TRANTIME)
+```
+
+The new minimum TRANTIME is 1 (minute). This makes sense, given that the commuters subset has removed all rows representing individuals with a commute time of 0 minutes. 
+
+*4. Create a new summary statistics table for your commuters subset, using the same format as your table in Section 2.*
+
+```{r}
+#Creating summary statistics table
+commuter_stats <- data.frame(
+  Variable = c("Age", "Female", "Less than High School", "High School Only", "Some College", "College Only", "Advanced Degree", "Employed", "Unemployed", "Not in Labor Force", "Commute Time (mins)", "Total Income ($)"),
+  N = c(length(commuters$AGE),
+        length(commuters$female), length(commuters$less_than_hs),    length(commuters$hs_only),
+        length(commuters$some_college), length(commuters$college_only),
+        length(commuters$advanced_degree), length(commuters$employed),
+        length(commuters$unemployed), length(commuters$not_in_labor_force),
+        length(commuters$TRANTIME), length(commuters$INCTOT)),
+  Mean = c(mean(commuters$AGE),
+        mean(commuters$female), mean(commuters$less_than_hs), mean(commuters$hs_only),
+        mean(commuters$some_college), mean(commuters$college_only),
+        mean(commuters$advanced_degree), mean(commuters$employed),
+        mean(commuters$unemployed), mean(commuters$not_in_labor_force),
+        mean(commuters$TRANTIME), mean(commuters$INCTOT)),
+  SD = c(sd(commuters$AGE),
+        sd(commuters$female), sd(commuters$less_than_hs), sd(commuters$hs_only),
+        sd(commuters$some_college), sd(commuters$college_only),
+        sd(commuters$advanced_degree), sd(commuters$employed),
+        sd(commuters$unemployed), sd(commuters$not_in_labor_force),
+        sd(commuters$TRANTIME), sd(commuters$INCTOT)),
+  Min = c(min(commuters$AGE),
+        min(commuters$female), min(commuters$less_than_hs), min(commuters$hs_only),
+        min(commuters$some_college), min(commuters$college_only),
+        min(commuters$advanced_degree), min(commuters$employed),
+        min(commuters$unemployed), min(commuters$not_in_labor_force),
+        min(commuters$TRANTIME), min(commuters$INCTOT)),
+  Max = c(max(commuters$AGE),
+        max(commuters$female), max(commuters$less_than_hs), max(commuters$hs_only),
+        max(commuters$some_college), max(commuters$college_only),
+        max(commuters$advanced_degree), max(commuters$employed),
+        max(commuters$unemployed), max(commuters$not_in_labor_force),
+        max(commuters$TRANTIME), max(commuters$INCTOT))
+)
+
+#Round the stats
+commuter_stats_rounded <- commuter_stats
+commuter_stats_rounded[, -1] <- round(commuter_stats[, -1], 2)
+commuter_stats_rounded
+
+#For table presentation
+library(knitr)
+
+commuter_stats_rounded |>
+  kable(
+    col.names = c("Variable", "N", "Mean", "Std Dev", "Min", "Max") ,
+    digits = 2 ,
+    caption = "Commuter Summary Statistics for 2024 ACS Sample"
+  )
+```
+
+
