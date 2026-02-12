@@ -1,13 +1,9 @@
 ---
-title: "ps1.qmd"
+title: "Gov 51 Problem Set 1"
 author: "Caleb Masshardt"
 format: pdf
 editor: visual
 ---
-
-## Gov 51 PSet 1
-
-Caleb Masshardt
 
 February 11, 2026
 
@@ -22,6 +18,7 @@ Instructions from problem set followed. See GitHub repository URL above.
 *1. Load the tidyverse and read in your ACS data.*
 
 ```{r}
+#| warning: false
 library(tidyverse)
 
 acs <- read.csv("./data/raw/acs2024.csv")
@@ -116,7 +113,11 @@ Since the N/A values for the variables in this dataset are represented by numera
 ```{r}
 #Creating summary statistics table
 summary_stats <- data.frame(
-  Variable = c("Age", "Female", "Less than High School", "High School Only", "Some College", "College Only", "Advanced Degree", "Employed", "Unemployed", "Not in Labor Force", "Commute Time (mins)", "Total Income ($)"),
+  Variable = c("Age", "Female", "Less than High School",
+      "High School Only", "Some College", "College Only",
+      "Advanced Degree", "Employed", "Unemployed",
+      "Not in Labor  Force", "Commute Time (mins)",
+      "Total Income ($)"),
   N = c(length(acs$AGE),
         length(acs$female), length(acs$less_than_hs), length(acs$hs_only),
         length(acs$some_college), length(acs$college_only),
@@ -152,7 +153,6 @@ summary_stats <- data.frame(
 #Round the stats
 stats_rounded <- summary_stats
 stats_rounded[, -1] <- round(summary_stats[, -1], 2)
-stats_rounded
 
 #For table presentation
 library(knitr)
@@ -174,14 +174,18 @@ The maximum commute time (from home to work) of 195 minutes, which is over 3 hou
 *1. Investigate the data.*
 
 ```{r}
-#Create variable no_commute with value of 1 if the person has no commute (commute time of 0 minutes) and 0 otherwise (commute time greater than 0 minutes).
+#Create variable no_commute with value of 1 if the person has no
+#commute (commute time of 0 minutes) and 0 otherwise 
+#(commute time greater than 0 minutes).
 acs <- acs %>%
   mutate(no_commute = if_else(TRANTIME %in% 0, 1, 0))
 
 #Using no_commute variable to find out how many people have a commute time of 0 minutes.
 acs |> count(no_commute)
 
-#Since 1 represents no commute and 0 represents a positive commute time, the mean of no_commute gives the proportion of people with a commute time of 0 minutes (represented by a value of 1).
+#Since 1 represents no commute and 0 represents a positive commute
+#time, the mean of no_commute gives the proportion of people with 
+#a commute time of 0 minutes (represented by a value of 1).
 mean(acs$no_commute)
 ```
 
@@ -219,9 +223,14 @@ The new minimum TRANTIME is 1 (minute). This makes sense, given that the commute
 ```{r}
 #Creating summary statistics table
 commuter_stats <- data.frame(
-  Variable = c("Age", "Female", "Less than High School", "High School Only", "Some College", "College Only", "Advanced Degree", "Employed", "Unemployed", "Not in Labor Force", "Commute Time (mins)", "Total Income ($)"),
+  Variable = c("Age", "Female", "Less than High School",
+          "High School Only", "Some College", "College Only",
+          "Advanced Degree", "Employed", "Unemployed",
+          "Not in Labor Force", "Commute Time (mins)",
+          "Total Income ($)"),
   N = c(length(commuters$AGE),
-        length(commuters$female), length(commuters$less_than_hs),    length(commuters$hs_only),
+        length(commuters$female),
+        length(commuters$less_than_hs),    length(commuters$hs_only),
         length(commuters$some_college), length(commuters$college_only),
         length(commuters$advanced_degree), length(commuters$employed),
         length(commuters$unemployed), length(commuters$not_in_labor_force),
@@ -255,7 +264,6 @@ commuter_stats <- data.frame(
 #Round the stats
 commuter_stats_rounded <- commuter_stats
 commuter_stats_rounded[, -1] <- round(commuter_stats[, -1], 2)
-commuter_stats_rounded
 
 #For table presentation
 library(knitr)
@@ -268,7 +276,7 @@ commuter_stats_rounded |>
   )
 ```
 
-## 4. Visualize and Interpret (20 points)
+
 
 ## 4. Visualize and Interpret
 
@@ -301,7 +309,8 @@ Given that the mean commute time of 27.22 minutes (from section 3) is greater th
 *4. Save your histogram to output/commute histogram.png using ggsave().*
 
 ```{r}
-ggsave("./output/commute_histogram.png", commute_histogram, width = 8, height = 5)
+ggsave("./output/commute_histogram.png", commute_histogram,
+       width = 8, height = 5)
 ```
 
 ## 5. The Weight of Evidence
